@@ -292,7 +292,7 @@ export function effectiveGame(book, key) {
     key, schedule: g.schedule, status, score, periods: periods.length ? periods : [1, 2, 3], periodLengths: off ? off.periods : null,
     official: off ? { number: off.number, importedBy: off.importedBy, importedAt: off.importedAt } : null,
     goals, penalties, shots: tr.shots, goalies: tr.goalies, shotsTracked: tr.shots.length > 0,
-    lineup: g.lineup, corrections: g.corrections, history: g.history.slice().sort((x, y) => String(y.at).localeCompare(String(x.at))),
+    lineup: g.lineup, corrections: g.corrections, history: g.history.slice().reverse().sort((x, y) => String(y.at).localeCompare(String(x.at))),   // newest first; same time: the later one first
     differs: goals.filter((e) => e.mark).length, notOnSheet: goals.filter((e) => e.notOnSheet).length
   };
 }
