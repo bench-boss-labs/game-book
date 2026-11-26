@@ -431,3 +431,31 @@ export function playerGames(book, number, type = 'all') {
   }
   return out.sort((a, b) => String(b.date).localeCompare(String(a.date)));
 }
+
+/**
+ * What importing this sheet would do, before saving (the import screen's step 3). Returns { matches, differs: [{ sheet, tracked }],
+ * sheetOnly: { goals, penalties }, trackedOnly: [tracked goal], replacing: bool }.
+ */
+export function compareSheet(book, key, facts) {
+  const g = (book.games || {})[key] ? normalizeGame(key, book.games[key]) : emptyGame(key);
+  const sheetGoals = officialIds(facts).goals;
+  const tr = g.tracked || { goals: [], penalties: [] };
+  const { pairs, sheetOnly, trackedOnly } = pairGoals(sheetGoals, tr.goals);
+  const differs = pairs.filter((p) => (p.tracked.scorer || p.tracked.assists.length) && (p.tracked.scorer !== p.sheet.scorer || !sameList(p.tracked.assists, p.sheet.assists)));
+  return {
+    matches: pairs.length - differs.length, differs, trackedOnly,
+    sheetOnly: { goals: sheetOnly.length, penalties: Math.max(0, (facts.penalties || []).length - tr.penalties.length) },
+    replacing: !!g.official
+  };
+}
+
+/** Undo every active correction on one goal: back to the game sheet's (or the marks') version. */
+export function revertGoal(book, key, goalId, opts = {}) {
+  const g = (book.games || {})[key];
+  if (!g) return book;
+  let b = book;
+  const eff = effectiveGame(book, key);
+  const e = eff.goals.find((x) => x.id === goalId);
+  for (const c of (e ? e.corrections : [])) if (!/^add-/.test((g.corrections.find((x) => x.id === c.id) || {}).kind || '')) b = undoCorrection(b, key, c.id, opts);
+  return b;
+}

@@ -8,13 +8,13 @@ By Bench Boss Labs. Design: the "Game Book: shared game data and stats design" d
 
 ## Status
 
-Version 0.1.0: phase 1, the shared core. No screens yet, and no app uses it yet.
+Version 0.2.0: phase 2, the shared screens. No app uses it yet.
 
 | Phase | What | Status |
 | --- | --- | --- |
 | 1 | Core: file format, the four layers, "the sheet wins", corrections, stats, merge | Done |
-| 2 | Shared screens (game summary, import, correct, season stats) in both apps | Next |
-| 3 | Family Watch Party reads and writes it; its Google sign-in moves to the Bench Boss Labs project | |
+| 2 | Shared screens (game summary, import, correct, season stats), with a demo page | Done |
+| 3 | Family Watch Party reads and writes it; its Google sign-in moves to the Bench Boss Labs project | Next |
 | 4 | Bulldogs Watch Party switches its marks, Summary and Season stats over | |
 
 ## The data
@@ -38,7 +38,7 @@ Games are keyed by where they came from: `alliance:2379430`, `club:bghc:2066`, `
 
 ## Using it in an app
 
-Copy a fixed version of `core/` into the app at `vendor/game-book-core/<version>/` (the same rule as the Bench Boss Labs
+Copy a fixed version of `core/` (and `ui/` for the screens) into the app at `vendor/game-book-core/<version>/` (the same rule as the Bench Boss Labs
 kit), then:
 
 ```js
@@ -62,10 +62,45 @@ Every function returns a new book and leaves the one passed in unchanged.
 | `core/merge.js` | Three-way merge and `syncStep`: changes are per goal, penalty and correction; on a clash Drive's version is kept and reported |
 | `core/file.js` | The Drive file: name, text, parsing, schema check |
 
+## The screens
+
+The same screens in both apps. Copy `ui/` next to `core/`, load `ui/game-book.css`, and give each screen what only the
+app knows: who is signed in, how to save, and how to play a goal in its own video.
+
+```js
+import * as GBUI from './vendor/game-book-core/0.2.0/ui/index.js';
+
+const screen = GBUI.renderGameSummary(el, {
+  book, key, variant: 'full',            // 'family' in Family Watch Party, with kid: { number: '7', name: 'Sam' }
+  by: 'Cristian', otherApp: 'Family Watch Party',
+  onChange: async (next, what) => { /* merge and save to Drive */ },
+  watch: (goal) => (goal.trackedId ? { label: '▶ Watch', onClick: () => playMark(goal.trackedId) } : null),
+  readPdf: (file) => GBUI.pdfItems(file, window.pdfjsLib), teamNames: ['Bulldogs U10 Blue', 'Burlington Bulldogs Blue'],
+  aside: [coachNotesCard]                // coaches version only: the app's own cards
+});
+screen.update(newBook);                  // after a sync brings in someone else's change
+```
+
+| Module | What |
+| --- | --- |
+| `ui/summary.js` | `renderGameSummary`: one game, coaches or family version |
+| `ui/stats.js` | `renderSeasonStats`: the season, coaches or family version |
+| `ui/import.js` | `openImportSheet`: the import panel; resolves with `{ book, key }` or null |
+| `ui/correct.js` | `openCorrectGoal`: correct, add, count or remove a goal; resolves with the new book or null |
+| `ui/rows.js` | `gameBookStatus`, `statusChip`, `playerLine` for the apps' game lists |
+| `ui/pdf.js` | `pdfItems`: a game sheet PDF's text, read with the app's own pdf.js |
+
+The screens never use innerHTML (names and notes are people's text), and every class starts with `gbk-`. Colours come
+from the app's own tokens (`--ink`, `--muted`, `--line`, `--surface`, `--accent`, `--good`, `--work`, `--bad`).
+
+**Demo**: serve the repo folder (for example `python3 -m http.server`) and open `demo/index.html`. It uses the sample
+games with made-up names; it takes the sample sheet's text (`tests/fixtures/u10-sheet-items.json`) in place of a PDF.
+
 ## Tests
 
 ```
-npm test
+npm test          # the core
+npm run test:ui   # the screens, in Chromium (needs Playwright)
 ```
 
 The tests use a real GameSheet game sheet's text (jersey numbers only, no names) and the same sample games as the mockups.

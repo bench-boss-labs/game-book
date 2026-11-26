@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game Book demo</title>
+<link rel="stylesheet" href="../ui/game-book.css">
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font-family: system-ui, 'Segoe UI', sans-serif; background: #EEF2F7; color: #10233F; }
+  body.dark { --ink: #EEF3FA; --muted: #A9B8CC; --line: #24406A; --surface: #12263F; --surface-2: #18304E; --field: #0B1B31;
+    --accent: #078DFF; --on-accent: #0B1B31; --accent-soft: rgba(7,141,255,.16); --accent-text: #6CBBFF;
+    --work: #FDBA74; --work-soft: rgba(251,146,60,.16); --good: #86EFAC; --good-soft: rgba(34,197,94,.16); --bad: #FCA5A5; --bad-soft: rgba(239,68,68,.16);
+    background: #0B1B31; color: #EEF3FA; color-scheme: dark; }
+  header { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 16px; border-bottom: 1px solid #D5DEEA; }
+  header h1 { font-size: 1rem; margin: 0 12px 0 0; }
+  header button { font: inherit; padding: 5px 10px; border-radius: 8px; border: 1px solid #B8C4D4; background: #fff; cursor: pointer; }
+  header button[aria-pressed="true"] { background: #078DFF; color: #fff; border-color: #078DFF; }
+  main { padding: 16px; max-width: 1200px; margin: 0 auto; }
+  #log { font-size: .8rem; color: #5B6B82; padding: 0 16px 16px; max-width: 1200px; margin: 0 auto; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Game Book demo</h1>
+  <button data-view="summary-full" aria-pressed="true">Summary · coaches</button>
+  <button data-view="summary-family">Summary · family</button>
+  <button data-view="summary-tracked">Marks only game</button>
+  <button data-view="stats-full">Season stats · coaches</button>
+  <button data-view="stats-family">Season stats · family</button>
+  <button data-view="rows">Game rows</button>
+  <button id="theme">Dark</button>
+  <button id="reset">Reset sample</button>
+</header>
+<main id="app"></main>
+<div id="log" aria-live="polite"></div>
+<script type="module">
+  import * as GB from '../core/index.js';
+  import * as UI from '../ui/index.js';
+  import { sampleBook, A, B, TEAM_NAMES } from './sample.js';
+
+  const app = document.getElementById('app');
+  const log = (t) => { document.getElementById('log').textContent = t; };
+  const kid = { number: '7', name: 'Sam' };
+  let book = await sampleBook();
+  let view = 'summary-full', screen = null;
+  window.gbDemo = { get book() { return book; }, GB };
+
+  // The demo reads a real PDF when pdf.js is on the page; it also takes the text items as JSON (for the tests).
+  async function readPdf(file) {
+    if (/\.json$/i.test(file.name)) { const j = JSON.parse(await file.text()); return j.items || j; }
+    return UI.pdfItems(file, window.pdfjsLib);
+  }
+  const onChange = (nb, what) => { book = nb; log(`Saved (${what}). In an app this goes to Drive and both apps see it.`); };
+  const watch = (g) => (g.side === 'for' && g.trackedId ? { label: '▶ Watch', onClick: () => log(`Would play the video at goal ${g.id}`) } : null);
+
+  function show() {
+    if (screen) screen.destroy();
+    for (const b of document.querySelectorAll('[data-view]')) b.setAttribute('aria-pressed', b.dataset.view === view ? 'true' : 'false');
+    const common = { by: 'Cristian', readPdf, teamNames: TEAM_NAMES, onChange, watch };
+    if (view === 'summary-full') screen = UI.renderGameSummary(app, { ...common, book, key: A, variant: 'full', otherApp: 'Family Watch Party', aside: [aside()] });
+    if (view === 'summary-family') screen = UI.renderGameSummary(app, { ...common, book, key: A, variant: 'family', kid, otherApp: 'Bulldogs Watch Party' });
+    if (view === 'summary-tracked') screen = UI.renderGameSummary(app, { ...common, book, key: B, variant: 'full', otherApp: 'Family Watch Party' });
+    if (view === 'stats-full') screen = UI.renderSeasonStats(app, { book, variant: 'full', importSheet: (key) => { view = key === A ? 'summary-full' : 'summary-tracked'; show(); } });
+    if (view === 'stats-family') screen = UI.renderSeasonStats(app, { book, variant: 'family', kid, openGame: (key) => { view = key === A ? 'summary-family' : 'summary-tracked'; show(); },
+      watchGoals: (key, goals) => log(`Would play ${goals.length} goal${goals.length === 1 ? '' : 's'}`) });
+    if (view === 'rows') {
+      app.replaceChildren();
+      const t = document.createElement('table'); t.className = 'gbk gbk-table gbk-card';
+      for (const key of [A, B]) {
+        const g = book.games[key].schedule, tr = t.insertRow();
+        tr.insertCell().textContent = `${g.date} ${g.homeAway === 'away' ? '@' : 'vs'} ${g.opponent}`;
+        tr.insertCell().append(UI.statusChip(book, key));
+        tr.insertCell().textContent = 'Sam: ' + UI.playerLine(book, key, kid.number);
+      }
+      app.append(t);
+      screen = { destroy() { app.replaceChildren(); } };
+    }
+  }
+  function aside() {
+    const s = document.createElement('section'); s.className = 'gbk-card';
+    s.innerHTML = '<h2>Coach’s notes</h2><p class="gbk-small gbk-muted">The app’s own card goes here (stays in Bulldogs Watch Party).</p>';
+    return s;
+  }
+  document.querySelector('header').addEventListener('click', async (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.view) { view = b.dataset.view; show(); }
+    if (b.id === 'theme') { document.body.classList.toggle('dark'); b.textContent = document.body.classList.contains('dark') ? 'Light' : 'Dark'; }
+    if (b.id === 'reset') { book = await sampleBook(); show(); log('Sample reset.'); }
+  });
+  show();
+</script>
+</body>
+</html>

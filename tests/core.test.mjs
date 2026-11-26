@@ -236,3 +236,20 @@ test('the Drive file: name, round trip, newer files are read-only', () => {
   assert.throws(() => GB.parseBookFile('{"app":"other"}'), /isn’t a Game Book/);
   assert.throws(() => GB.parseBookFile('not json'), /damaged/);
 });
+
+test('comparing a sheet before importing it, and going back to the sheet’s version', () => {
+  let b = sampleBook();
+  b = GB.removeSheet(b, A, who);
+  const c = GB.compareSheet(b, A, facts);
+  assert.equal(c.matches, 4, 'paired goals that agree, or whose marks have no details to disagree with');
+  assert.equal(c.differs.length, 1);
+  assert.equal(c.differs[0].sheet.time, '02:49');
+  assert.deepEqual(c.sheetOnly, { goals: 8, penalties: 8 });
+  assert.equal(c.trackedOnly.length, 0);
+  assert.equal(c.replacing, false);
+  b = GB.importSheet(b, A, facts, who);
+  const gid = GB.effectiveGame(b, A).goals.find((x) => x.clock === '07:12').id;
+  assert.deepEqual(GB.effectiveGame(b, A).goals.find((x) => x.id === gid).assists, ['7'], 'the correction survived removing and re-importing the sheet');
+  b = GB.revertGoal(b, A, gid, { by: 'Cristian' });
+  assert.deepEqual(GB.effectiveGame(b, A).goals.find((x) => x.id === gid).assists, []);
+});
