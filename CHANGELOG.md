@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 — 2026-11-26
+
+- Phones: the goals table drops its Team column (our scorers show in our colour; the other team's goals say the team), and tables and cards are a little tighter, so the goals fit without sideways scrolling. The family season card shows your kid's five numbers in one row, and Game by game drops its PIM and Game Book columns.
+
 ## 0.2.0 — 2026-11-25 (phase 2: the shared screens)
 
 - **Game summary** (`renderGameSummary`): where the data came from, the score by period, goals with their source (Official, Corrected, Marked, Added, Not on the game sheet), penalties, shots and goalies, points this game and History with Undo. Two versions: **coaches** (everything, plus the app's own side cards) and **family** (leads with your kid; penalties and shots one line each; no "mark differs" notes).

@@ -1,6 +1,6 @@
 {
   "name": "game-book",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "Game Book: one shared source of truth for a team's games, scores and stats, used by Bulldogs Watch Party and Family Watch Party.",
   "type": "module",

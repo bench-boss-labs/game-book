@@ -85,7 +85,7 @@ export function renderGameSummary(root, o) {
       h('div', { class: 'gbk-row gbk-spread' }, h('h2', {}, 'Goals'), h('span', { class: 'gbk-small gbk-muted' },
         eff.status === 'official' ? 'The game sheet wins; corrections go on top.' : eff.status === 'tracked' ? 'From the coaches’ marks until a game sheet is imported.' : '')),
       eff.goals.length ? h('table', { class: 'gbk-table' },
-        h('thead', {}, h('tr', {}, ['Period', 'Team', 'Scorer', 'Assists', full ? '' : null, 'Score', 'Source', ''].filter((x) => x !== null).map((t) => h('th', {}, t)))),
+        h('thead', {}, h('tr', {}, ['Period', 'Team', 'Scorer', 'Assists', full ? '' : null, 'Score', 'Source', ''].filter((x) => x !== null).map((t) => h('th', { class: t === 'Team' ? 'gbk-wide-only' : '' }, t)))),
         h('tbody', {}, eff.goals.map((g) => {
           const ours = g.side === 'for';
           const kidRow = kidN && ours && (g.scorer === kidN || g.assists.includes(kidN));
@@ -93,8 +93,8 @@ export function renderGameSummary(root, o) {
           const src = g.notOnSheet && !g.counted ? pill('Not on the game sheet', 'work') : pill(...SOURCE[g.source]);
           return h('tr', { class: (kidRow ? 'gbk-kid' : '') + (g.counted ? '' : ' gbk-uncounted') },
             h('td', {}, ordinal(g.per), g.clock ? h('span', { class: 'gbk-small gbk-muted gbk-block' }, g.clock + ' left') : null),
-            h('td', { class: ours ? 'gbk-us' : 'gbk-them' }, ours ? us : them),
-            h('td', {}, ours ? h('b', {}, P(g.scorer) || '—') : (g.scorer ? '#' + g.scorer : '—')),
+            h('td', { class: 'gbk-wide-only ' + (ours ? 'gbk-us' : 'gbk-them') }, ours ? us : them),
+            h('td', { class: ours ? 'gbk-us' : 'gbk-them' }, ours ? h('b', {}, P(g.scorer) || '—') : [h('span', { class: 'gbk-narrow-only' }, them + ' '), g.scorer ? '#' + g.scorer : '—']),
             h('td', {}, g.assists.length ? g.assists.map((a) => (ours ? P(a) : '#' + a)).join(', ') : h('span', { class: 'gbk-muted' }, 'Unassisted'),
               full && !ours && g.onIce.length ? h('span', { class: 'gbk-small gbk-muted' }, ' · on ice ' + g.onIce.map((n) => '#' + n).join(' ')) : null),
             full ? h('td', {}, strength === 'pp' ? pill('PP', 'info') : strength === 'sh' ? pill('SH', 'good') : null) : null,

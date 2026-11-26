@@ -33,6 +33,17 @@
 .gbk-layout { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 16px; align-items: start; }
 .gbk-summary, .gbk-stats { display: flex; flex-direction: column; gap: 12px; }
 @media (max-width: 860px) { .gbk-layout, .gbk-grid21 { grid-template-columns: 1fr; } }
+/* phones: the goals table drops its Team column (our scorers are in our colour; theirs say the team) */
+.gbk-narrow-only { display: none; }
+@media (max-width: 600px) {
+  .gbk-wide-only { display: none; }
+  .gbk-narrow-only { display: inline; }
+  .gbk-table th, .gbk-table td { padding: 6px 5px; }
+  .gbk-card { padding: 12px; }
+  .gbk-kidrow > .gbk-grid5 { flex: 1 1 100%; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+  .gbk-kidrow > .gbk-grid5 .gbk-stat { padding: 8px 6px; }
+  .gbk-kidrow > .gbk-grid5 .gbk-stat > span { font-size: .72rem; }
+}
 
 /* text */
 .gbk-muted { color: var(--gbk-muted); }
